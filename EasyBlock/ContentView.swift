@@ -22,6 +22,8 @@ struct Block: Identifiable {
 
 struct ContentView: View {
     @State private var blocks: [Block] = [Block(color: Block.randomColor())]
+    @State private var currentScale: CGFloat = 1.0
+    @State private var finalScale: CGFloat = 1.0
 
     var body: some View {
         GeometryReader { geometry in
@@ -36,6 +38,18 @@ struct ContentView: View {
                             )
                     }
                 }
+                .scaleEffect(currentScale * finalScale)
+                .gesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            currentScale = value
+                        }
+                        .onEnded { value in
+                            finalScale *= value
+                            finalScale = min(max(finalScale, 0.5), 5.0)
+                            currentScale = 1.0
+                        }
+                )
 
                 VStack {
                     Spacer()
