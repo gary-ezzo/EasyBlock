@@ -46,7 +46,7 @@ struct ContentView: View {
                         }
                         .onEnded { value in
                             finalScale *= value
-                            finalScale = min(max(finalScale, 0.5), 5.0)
+                            finalScale = min(max(finalScale, 1.0), 5.0)
                             currentScale = 1.0
                         }
                 )
