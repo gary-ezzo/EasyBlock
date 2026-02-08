@@ -49,7 +49,7 @@ struct ContentView: View {
                         .gesture(
                             DragGesture()
                                 .onChanged { value in
-                                    block.position = value.location
+                                    block.position.y = value.location.y
                                 }
                         )
                 }
