@@ -10,6 +10,9 @@ import SwiftUI
 struct Block: Identifiable {
     let id = UUID()
     var color: Color
+    var width: CGFloat
+    var height: CGFloat
+    var position: CGPoint
 
     static func randomColor() -> Color {
         Color(
@@ -21,41 +24,41 @@ struct Block: Identifiable {
 }
 
 struct ContentView: View {
-    @State private var blocks: [Block] = [Block(color: Block.randomColor())]
+    @State private var blocks: [Block] = []
     @State private var currentScale: CGFloat = 1.0
     @State private var finalScale: CGFloat = 1.0
+    @State private var showingSizePopup = false
+    @State private var heightInput = "100"
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                VStack(spacing: 0) {
-                    ForEach(blocks) { block in
-                        Rectangle()
-                            .fill(block.color)
-                            .overlay(
-                                Rectangle()
-                                    .stroke(Color.black, lineWidth: 1)
-                            )
-                    }
+                Color.white
+                    .ignoresSafeArea()
+
+                ForEach($blocks) { $block in
+                    Rectangle()
+                        .fill(block.color)
+                        .overlay(
+                            Rectangle()
+                                .stroke(Color.black, lineWidth: 1)
+                        )
+                        .frame(width: block.width * currentScale * finalScale,
+                               height: block.height * currentScale * finalScale)
+                        .position(block.position)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    block.position = value.location
+                                }
+                        )
                 }
-                .scaleEffect(currentScale * finalScale)
-                .gesture(
-                    MagnificationGesture()
-                        .onChanged { value in
-                            currentScale = value
-                        }
-                        .onEnded { value in
-                            finalScale *= value
-                            finalScale = min(max(finalScale, 1.0), 5.0)
-                            currentScale = 1.0
-                        }
-                )
 
                 VStack {
                     Spacer()
                     HStack {
                         Spacer()
-                        Button(action: addBlock) {
+                        Button(action: { showingSizePopup = true }) {
                             Image(systemName: "plus")
                                 .font(.title)
                                 .fontWeight(.bold)
@@ -69,12 +72,39 @@ struct ContentView: View {
                     }
                 }
             }
+            .gesture(
+                MagnificationGesture()
+                    .onChanged { value in
+                        currentScale = value
+                    }
+                    .onEnded { value in
+                        finalScale *= value
+                        finalScale = min(max(finalScale, 1.0), 5.0)
+                        currentScale = 1.0
+                    }
+            )
+            .alert("New Rectangle", isPresented: $showingSizePopup) {
+                TextField("Height", text: $heightInput)
+                    .keyboardType(.numberPad)
+                Button("Cancel", role: .cancel) { }
+                Button("Add") {
+                    addBlock(in: geometry.size)
+                }
+            } message: {
+                Text("Enter the height for the new rectangle")
+            }
         }
-        .ignoresSafeArea()
     }
 
-    private func addBlock() {
-        blocks.append(Block(color: Block.randomColor()))
+    private func addBlock(in size: CGSize) {
+        let height = CGFloat(Double(heightInput) ?? 100)
+        let centerPosition = CGPoint(x: size.width / 2, y: size.height / 2)
+        blocks.append(Block(
+            color: Block.randomColor(),
+            width: size.width,
+            height: height,
+            position: centerPosition
+        ))
     }
 }
 
