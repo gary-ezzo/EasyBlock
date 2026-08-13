@@ -40,16 +40,10 @@ struct ContentView: View {
             .gesture(longPressThenDrag) // attach here so coordinates are relative to this VStack
         }
         .sheet(isPresented: $showModal) {
-            VStack(spacing: 16) {
-                Text("Long Press Detected")
-                    .font(.title2)
-                Text("x: \(Int(pressLocation.x)), y: \(Int(pressLocation.y))")
-                    .monospaced()
-                Button("Dismiss") {
-                    showModal = false
-                }
-            }
-            .padding()
+            AddTimeBlockModal(
+                pressLocation: pressLocation,
+                isPresented: $showModal
+            ).padding()
             .presentationDetents([.medium, .large])
         }
     }
