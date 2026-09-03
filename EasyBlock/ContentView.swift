@@ -56,10 +56,11 @@ struct ContentView: View {
                 .overlay(alignment: .topLeading) {
                     ZStack(alignment: .topLeading) {
                         ForEach(Array(blocks.enumerated()), id: \.offset) { _, range in
+                            // Ensure the rectangle spans the Y coordinates from start to end (end exclusive)
                             let yStart = CGFloat(range.lowerBound)
-                            let yEnd = CGFloat(range.upperBound)
-                            let rectY = min(yStart, yEnd)
-                            let rectHeight = max(1, abs(yEnd - yStart))
+                            let yEndExclusive = CGFloat(range.upperBound)
+                            let rectY = min(yStart, yEndExclusive)
+                            let rectHeight = max(1, abs(yEndExclusive - yStart))
                             Rectangle()
                                 .fill(Color.accentColor.opacity(0.25))
                                 .overlay(
@@ -81,7 +82,7 @@ struct ContentView: View {
                 isPresented: Binding(get: { pressLocation != nil }, set: { if !$0 { pressLocation = nil } }),
                 maxY: maxY,
                 onSave: { start, end in
-                    blocks.append(start...end)
+                    blocks.append(start...(end - 1))
                 }
             )
             .padding()
