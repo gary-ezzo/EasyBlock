@@ -59,15 +59,7 @@ struct ContentView: View {
                             // Ensure the rectangle spans the Y coordinates from start to end (end exclusive)
                             let yStart = CGFloat(range.lowerBound)
                             let yEndExclusive = CGFloat(range.upperBound)
-                            let rectY = min(yStart, yEndExclusive)
-                            let rectHeight = max(1, abs(yEndExclusive - yStart))
-                            Rectangle()
-                                .fill(Color.accentColor.opacity(0.25))
-                                .overlay(
-                                    Rectangle().stroke(Color.accentColor, lineWidth: 1)
-                                )
-                                .frame(width: width, height: rectHeight)
-                                .offset(x: 0, y: rectY)
+                            TimeBlock(yStart: yStart, yEnd: yEndExclusive, width: width)
                         }
                     }
                 }
