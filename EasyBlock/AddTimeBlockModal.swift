@@ -13,10 +13,11 @@ struct AddTimeBlockModal: View {
     /// The maximum Y coordinate available in ContentView (inclusive)
     let maxY: Int
     /// Callback when user taps Save with valid values
-    var onSave: (Int, Int) -> Void
+    var onSave: (String, Int, Int) -> Void
 
     @State private var startText: String = ""
     @State private var endText: String = ""
+    @State private var title: String = ""
 
     // Derived integer values with clamping
     private var startValue: Int {
@@ -42,6 +43,12 @@ struct AddTimeBlockModal: View {
                         Text("\(Int(pressLocation.y))")
                             .monospaced()
                     }
+                }
+
+                Section(header: Text("Title")) {
+                    TextField("e.g. Morning Focus", text: $title)
+                        .textInputAutocapitalization(.words)
+                        .submitLabel(.done)
                 }
 
                 Section(header: Text("Start Time")) {
@@ -79,7 +86,7 @@ struct AddTimeBlockModal: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { saveAndDismiss() }
-                        .disabled(!isValidRange)
+                        .disabled(!isValidRange || title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
         }
@@ -121,7 +128,8 @@ struct AddTimeBlockModal: View {
 
     private func saveAndDismiss() {
         let (s, e) = orderedClampedValues()
-        onSave(s, e)
+        onSave(title.trimmingCharacters(in: .whitespacesAndNewlines), s, e)
         isPresented = false
     }
 }
+

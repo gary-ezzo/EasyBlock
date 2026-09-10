@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var showModal = false
     @State private var pressLocation: CGPoint? = nil
-    @State private var blocks: [ClosedRange<Int>] = []
+    @State private var blocks: [(title: String, range: ClosedRange<Int>)] = []
     @State private var contentHeight: CGFloat = 0
     private var maxY: Int { Int(max(0, contentHeight.rounded(.down))) }
     
@@ -55,11 +55,12 @@ struct ContentView: View {
                 )
                 .overlay(alignment: .topLeading) {
                     ZStack(alignment: .topLeading) {
-                        ForEach(Array(blocks.enumerated()), id: \.offset) { _, range in
-                            // Ensure the rectangle spans the Y coordinates from start to end (end exclusive)
+                        ForEach(Array(blocks.enumerated()), id: \.offset) { _, item in
+                            let range = item.range
+                            let title = item.title
                             let yStart = CGFloat(range.lowerBound)
                             let yEndExclusive = CGFloat(range.upperBound)
-                            TimeBlock(yStart: yStart, yEnd: yEndExclusive, width: width)
+                            TimeBlock(title: title, yStart: yStart, yEnd: yEndExclusive, width: width)
                         }
                     }
                 }
@@ -73,8 +74,8 @@ struct ContentView: View {
                 pressLocation: location,
                 isPresented: Binding(get: { pressLocation != nil }, set: { if !$0 { pressLocation = nil } }),
                 maxY: maxY,
-                onSave: { start, end in
-                    blocks.append(start...(end - 1))
+                onSave: { title, start, end in
+                    blocks.append((title: title, range: start...(end - 1)))
                 }
             )
             .padding()
