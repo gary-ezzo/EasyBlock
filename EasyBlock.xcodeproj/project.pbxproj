@@ -11,6 +11,8 @@
 		0A184B7E2F1762E40026B1C8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A184B7D2F1762E40026B1C8 /* ContentView.swift */; };
 		0A184B802F1762E50026B1C8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A184B7F2F1762E50026B1C8 /* Assets.xcassets */; };
 		0A184B832F1762E50026B1C8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0A184B822F1762E50026B1C8 /* Preview Assets.xcassets */; };
+		0A354F9C3019C7DF00564FF6 /* AddTimeBlockModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A354F9B3019C7DF00564FF6 /* AddTimeBlockModal.swift */; };
+		0A87632030522772009179E6 /* TimeBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A87631F30522772009179E6 /* TimeBlock.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,6 +21,8 @@
 		0A184B7D2F1762E40026B1C8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		0A184B7F2F1762E50026B1C8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0A184B822F1762E50026B1C8 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		0A354F9B3019C7DF00564FF6 /* AddTimeBlockModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTimeBlockModal.swift; sourceTree = "<group>"; };
+		0A87631F30522772009179E6 /* TimeBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeBlock.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,8 +57,10 @@
 			children = (
 				0A184B7B2F1762E40026B1C8 /* EasyBlockApp.swift */,
 				0A184B7D2F1762E40026B1C8 /* ContentView.swift */,
+				0A354F9B3019C7DF00564FF6 /* AddTimeBlockModal.swift */,
 				0A184B7F2F1762E50026B1C8 /* Assets.xcassets */,
 				0A184B812F1762E50026B1C8 /* Preview Content */,
+				0A87631F30522772009179E6 /* TimeBlock.swift */,
 			);
 			path = EasyBlock;
 			sourceTree = "<group>";
@@ -137,7 +143,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A87632030522772009179E6 /* TimeBlock.swift in Sources */,
 				0A184B7E2F1762E40026B1C8 /* ContentView.swift in Sources */,
+				0A354F9C3019C7DF00564FF6 /* AddTimeBlockModal.swift in Sources */,
 				0A184B7C2F1762E40026B1C8 /* EasyBlockApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
