@@ -9,6 +9,7 @@ struct TimeBlock: View {
     let yStart: CGFloat
     let yEnd: CGFloat
     let width: CGFloat
+    var onTap: (() -> Void)? = nil
 
     private var rectY: CGFloat {
         min(yStart, yEnd)
@@ -39,13 +40,18 @@ struct TimeBlock: View {
         .accessibilityLabel("Time block")
         .accessibilityValue("")
         .accessibilityHint("\(title). From \(Int(rectY)) to \(Int(rectY + rectHeight)) points")
+        .onTapGesture {
+            onTap?()
+        }
     }
 }
 
 #Preview {
     ZStack(alignment: .topLeading) {
         Color.clear
-        TimeBlock(title: "Morning Focus", yStart: 50, yEnd: 150, width: 200)
+        TimeBlock(title: "Morning Focus", yStart: 50, yEnd: 150, width: 200) {
+            print("Time block tapped")
+        }
     }
     .frame(width: 220, height: 220)
     .padding()

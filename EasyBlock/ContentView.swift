@@ -60,7 +60,9 @@ struct ContentView: View {
                             let title = item.title
                             let yStart = CGFloat(range.lowerBound)
                             let yEndExclusive = CGFloat(range.upperBound)
-                            TimeBlock(title: title, yStart: yStart, yEnd: yEndExclusive, width: width)
+                            TimeBlock(title: title, yStart: yStart, yEnd: yEndExclusive, width: width) {
+                                print("Tapped on TimeBlock: \(title)")
+                            }
                         }
                     }
                 }
