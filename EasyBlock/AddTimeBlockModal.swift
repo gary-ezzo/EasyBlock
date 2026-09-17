@@ -12,8 +12,10 @@ struct AddTimeBlockModal: View {
     @Binding var isPresented: Bool
     /// The maximum Y coordinate available in ContentView (inclusive)
     let maxY: Int
+    /// Optional existing values when editing an existing block
+    let existing: (id: UUID?, title: String, start: Int, end: Int)?
     /// Callback when user taps Save with valid values
-    var onSave: (String, Int, Int) -> Void
+    var onSave: (_ id: UUID?, _ title: String, _ start: Int, _ end: Int) -> Void
 
     @State private var startText: String = ""
     @State private var endText: String = ""
@@ -57,9 +59,6 @@ struct AddTimeBlockModal: View {
                         .onChange(of: startText) { _, _ in
                             enforceOrderingAfterStartChange()
                         }
-                        .onAppear {
-                            if startText.isEmpty { startText = String(Int(pressLocation.y)) }
-                        }
                     Text("Min 0, Max \(max(maxY - 1, 0))")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -71,15 +70,23 @@ struct AddTimeBlockModal: View {
                         .onChange(of: endText) { _, _ in
                             enforceOrderingAfterEndChange()
                         }
-                        .onAppear {
-                            if endText.isEmpty { endText = String(Int(pressLocation.y)) }
-                        }
                     Text("Min 0, Max \(maxY)")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Add Time Block")
+            .onAppear {
+                if let existing = existing {
+                    title = existing.title
+                    startText = String(existing.start)
+                    endText = String(existing.end)
+                } else {
+                    // Default to press location when adding
+                    if startText.isEmpty { startText = String(Int(pressLocation.y)) }
+                    if endText.isEmpty { endText = String(Int(pressLocation.y)) }
+                }
+            }
+            .navigationTitle(existing == nil ? "Add Time Block" : "Edit Time Block")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { isPresented = false }
@@ -128,7 +135,7 @@ struct AddTimeBlockModal: View {
 
     private func saveAndDismiss() {
         let (s, e) = orderedClampedValues()
-        onSave(title.trimmingCharacters(in: .whitespacesAndNewlines), s, e)
+        onSave(existing?.id, title.trimmingCharacters(in: .whitespacesAndNewlines), s, e)
         isPresented = false
     }
 }
