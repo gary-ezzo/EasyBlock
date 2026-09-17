@@ -5,7 +5,14 @@ struct ContentView: View {
     @State private var pressLocation: CGPoint? = nil
     @State private var blocks: [(title: String, range: ClosedRange<Int>)] = []
     @State private var contentHeight: CGFloat = 0
+    @State private var selectedBlock: (title: String, range: ClosedRange<Int>)? = nil
     private var maxY: Int { Int(max(0, contentHeight.rounded(.down))) }
+    
+    private struct IdentifiedBlock: Identifiable {
+        let id: UUID
+        let title: String
+        let range: ClosedRange<Int>
+    }
     
     func setShowModal(drag: DragGesture.Value?) {
         let location = drag?.location ?? .zero
@@ -61,7 +68,7 @@ struct ContentView: View {
                             let yStart = CGFloat(range.lowerBound)
                             let yEndExclusive = CGFloat(range.upperBound)
                             TimeBlock(title: title, yStart: yStart, yEnd: yEndExclusive, width: width) {
-                                print("Tapped on TimeBlock: \(title)")
+                                selectedBlock = (title: title, range: range)
                             }
                         }
                     }
@@ -82,6 +89,46 @@ struct ContentView: View {
             )
             .padding()
             .presentationDetents([.medium, .large])
+        }
+        .sheet(item: Binding(get: {
+            selectedBlock.map { IdentifiedBlock(id: UUID(), title: $0.title, range: $0.range) }
+        }, set: { newValue in
+            if let newValue = newValue {
+                selectedBlock = (title: newValue.title, range: newValue.range)
+            } else {
+                selectedBlock = nil
+            }
+        })) { identified in
+            TimeBlockDetailView(title: identified.title, range: identified.range)
+                .presentationDetents([.medium, .large])
+        }
+    }
+}
+
+private struct TimeBlockDetailView: View {
+    let title: String
+    let range: ClosedRange<Int>
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(title)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                HStack {
+                    Text("Start:")
+                    Text("\(range.lowerBound)")
+                        .monospaced()
+                }
+                HStack {
+                    Text("End:")
+                    Text("\(range.upperBound)")
+                        .monospaced()
+                }
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Time Block")
         }
     }
 }
