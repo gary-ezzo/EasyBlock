@@ -88,7 +88,7 @@ struct ContentView: View {
                 }
             )
             .padding()
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.large])
         }
         .sheet(item: Binding(get: {
             selectedBlock.map { IdentifiedBlock(id: UUID(), title: $0.title, range: $0.range) }
