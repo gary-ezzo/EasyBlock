@@ -123,7 +123,7 @@ struct ContentView: View {
                     selectedBlock = nil
                 }
             )
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.large])
         }
     }
 }
