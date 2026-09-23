@@ -99,8 +99,31 @@ struct ContentView: View {
                 selectedBlock = nil
             }
         })) { identified in
-            TimeBlockDetailView(title: identified.title, range: identified.range)
-                .presentationDetents([.medium, .large])
+            EditTimeBlockModal(
+                title: identified.title,
+                start: identified.range.lowerBound,
+                end: identified.range.upperBound + 1,
+                maxY: maxY,
+                onCancel: {
+                    selectedBlock = nil
+                },
+                onSave: { newTitle, newStart, newEnd in
+                    // Update the block in-place within `blocks`
+                    if let idx = blocks.firstIndex(where: { $0.title == identified.title && $0.range == identified.range }) {
+                        blocks[idx].title = newTitle
+                        // convert to ClosedRange by subtracting 1 from end
+                        blocks[idx].range = newStart...(newEnd - 1)
+                    }
+                    selectedBlock = nil
+                },
+                onDelete: {
+                    if let idx = blocks.firstIndex(where: { $0.title == identified.title && $0.range == identified.range }) {
+                        blocks.remove(at: idx)
+                    }
+                    selectedBlock = nil
+                }
+            )
+            .presentationDetents([.medium, .large])
         }
     }
 }
@@ -132,3 +155,72 @@ private struct TimeBlockDetailView: View {
         }
     }
 }
+
+private struct EditTimeBlockModal: View {
+    @State private var workingTitle: String
+    @State private var workingStart: Int
+    @State private var workingEnd: Int
+
+    let maxY: Int
+    let onCancel: () -> Void
+    let onSave: (_ title: String, _ start: Int, _ end: Int) -> Void
+    let onDelete: () -> Void
+
+    init(title: String, start: Int, end: Int, maxY: Int, onCancel: @escaping () -> Void, onSave: @escaping (_ title: String, _ start: Int, _ end: Int) -> Void, onDelete: @escaping () -> Void) {
+        _workingTitle = State(initialValue: title)
+        _workingStart = State(initialValue: start)
+        _workingEnd = State(initialValue: end)
+        self.maxY = maxY
+        self.onCancel = onCancel
+        self.onSave = onSave
+        self.onDelete = onDelete
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("Title")) {
+                    TextField("Title", text: $workingTitle)
+                }
+                Section(header: Text("Time Range"), footer: Text("End is exclusive")) {
+                    Stepper(value: $workingStart, in: 0...max(0, workingEnd - 1), step: 1) {
+                        HStack {
+                            Text("Start")
+                            Spacer()
+                            Text("\(workingStart)").monospaced()
+                        }
+                    }
+                    Stepper(value: $workingEnd, in: (workingStart + 1)...max(maxY, workingStart + 1), step: 1) {
+                        HStack {
+                            Text("End")
+                            Spacer()
+                            Text("\(workingEnd)").monospaced()
+                        }
+                    }
+                }
+                Section {
+                    Button(role: .destructive) {
+                        onDelete()
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+            }
+            .navigationTitle("Edit Time Block")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { onCancel() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let clampedStart = max(0, min(workingStart, workingEnd - 1))
+                        let clampedEnd = max(clampedStart + 1, min(workingEnd, maxY))
+                        onSave(workingTitle.trimmingCharacters(in: .whitespacesAndNewlines), clampedStart, clampedEnd)
+                    }
+                    .disabled(workingTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+    }
+}
+
