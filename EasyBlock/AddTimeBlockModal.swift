@@ -33,17 +33,6 @@ struct AddTimeBlockModal: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Press Location")) {
-                    HStack {
-                        Text("x:")
-                        Text("\(Int(pressLocation.x))")
-                            .monospaced()
-                        Spacer()
-                        Text("y:")
-                        Text("\(Int(pressLocation.y))")
-                            .monospaced()
-                    }
-                }
 
                 Section(header: Text("Title")) {
                     TextField("e.g. Morning Focus", text: $title)
