@@ -87,7 +87,6 @@ struct ContentView: View {
                     blocks.append((title: title, range: start...(end - 1)))
                 }
             )
-            .padding()
             .presentationDetents([.large])
         }
         .sheet(item: Binding(get: {
