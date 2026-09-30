@@ -207,19 +207,57 @@ private struct TimeBlockEditor: View {
                     TextField("Title", text: $workingTitle)
                 }
                 Section(header: Text("Time Range"), footer: Text("End is exclusive")) {
-                    Stepper(value: $workingStart, in: 0...max(0, workingEnd - 1), step: 1) {
-                        HStack {
-                            Text("Start")
-                            Spacer()
-                            Text("\(workingStart)").monospaced()
-                        }
+                    // Start row with TextField + Stepper
+                    HStack {
+                        Text("Start")
+                        Spacer()
+                        TextField("0", text: Binding(
+                            get: { String(workingStart) },
+                            set: { newValue in
+                                let filtered = newValue.filter { $0.isNumber }
+                                if let val = Int(filtered) {
+                                    // Clamp to allowed range [0, workingEnd - 1]
+                                    workingStart = min(max(0, val), max(0, workingEnd - 1))
+                                } else if newValue.isEmpty {
+                                    // allow clearing temporarily; set to 0 to avoid invalid state
+                                    workingStart = 0
+                                }
+                            }
+                        ))
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                        .frame(minWidth: 56)
+                        .monospacedDigit()
+                        Stepper("", value: $workingStart, in: 0...max(0, workingEnd - 1), step: 1)
+                            .labelsHidden()
+                            .accessibilityLabel("Increment or decrement start")
                     }
-                    Stepper(value: $workingEnd, in: (workingStart + 1)...max(maxY, workingStart + 1), step: 1) {
-                        HStack {
-                            Text("End")
-                            Spacer()
-                            Text("\(workingEnd)").monospaced()
-                        }
+
+                    // End row with TextField + Stepper
+                    HStack {
+                        Text("End")
+                        Spacer()
+                        TextField("1", text: Binding(
+                            get: { String(workingEnd) },
+                            set: { newValue in
+                                let filtered = newValue.filter { $0.isNumber }
+                                if let val = Int(filtered) {
+                                    // Clamp to allowed range [workingStart + 1, maxY]
+                                    let lower = workingStart + 1
+                                    workingEnd = min(max(lower, val), max(maxY, lower))
+                                } else if newValue.isEmpty {
+                                    // allow clearing temporarily; set to minimum allowed
+                                    workingEnd = workingStart + 1
+                                }
+                            }
+                        ))
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                        .frame(minWidth: 56)
+                        .monospacedDigit()
+                        Stepper("", value: $workingEnd, in: (workingStart + 1)...max(maxY, workingStart + 1), step: 1)
+                            .labelsHidden()
+                            .accessibilityLabel("Increment or decrement end")
                     }
                 }
 
@@ -248,3 +286,4 @@ private struct TimeBlockEditor: View {
         }
     }
 }
+
