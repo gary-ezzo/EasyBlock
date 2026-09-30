@@ -79,12 +79,22 @@ struct ContentView: View {
         }
         .sheet(isPresented: Binding(get: { pressLocation != nil }, set: { if !$0 { pressLocation = nil } })) {
             let location = pressLocation ?? .zero
-            AddTimeBlockModal(
-                pressLocation: location,
-                isPresented: Binding(get: { pressLocation != nil }, set: { if !$0 { pressLocation = nil } }),
+            // Map the press location's y-coordinate into an initial [start, end) range.
+            let rawY = Int(location.y.rounded(.down))
+            let clampedStart = max(0, min(max(0, maxY - 1), rawY))
+            let initialStart = clampedStart
+            let initialEnd = min(maxY, clampedStart + 1)
+
+            TimeBlockEditor(
+                title: "",
+                start: initialStart,
+                end: initialEnd,
                 maxY: maxY,
+                mode: .add,
+                onCancel: { pressLocation = nil },
                 onSave: { title, start, end in
                     blocks.append((title: title, range: start...(end - 1)))
+                    pressLocation = nil
                 }
             )
             .presentationDetents([.large])
@@ -98,19 +108,18 @@ struct ContentView: View {
                 selectedBlock = nil
             }
         })) { identified in
-            EditTimeBlockModal(
+            TimeBlockEditor(
                 title: identified.title,
                 start: identified.range.lowerBound,
                 end: identified.range.upperBound + 1,
                 maxY: maxY,
+                mode: .edit,
                 onCancel: {
                     selectedBlock = nil
                 },
                 onSave: { newTitle, newStart, newEnd in
-                    // Update the block in-place within `blocks`
                     if let idx = blocks.firstIndex(where: { $0.title == identified.title && $0.range == identified.range }) {
                         blocks[idx].title = newTitle
-                        // convert to ClosedRange by subtracting 1 from end
                         blocks[idx].range = newStart...(newEnd - 1)
                     }
                     selectedBlock = nil
@@ -155,21 +164,37 @@ private struct TimeBlockDetailView: View {
     }
 }
 
-private struct EditTimeBlockModal: View {
+private enum TimeBlockEditorMode {
+    case add
+    case edit
+}
+
+private struct TimeBlockEditor: View {
     @State private var workingTitle: String
     @State private var workingStart: Int
     @State private var workingEnd: Int
 
     let maxY: Int
+    let mode: TimeBlockEditorMode
     let onCancel: () -> Void
     let onSave: (_ title: String, _ start: Int, _ end: Int) -> Void
-    let onDelete: () -> Void
+    let onDelete: (() -> Void)?
 
-    init(title: String, start: Int, end: Int, maxY: Int, onCancel: @escaping () -> Void, onSave: @escaping (_ title: String, _ start: Int, _ end: Int) -> Void, onDelete: @escaping () -> Void) {
+    init(
+        title: String,
+        start: Int,
+        end: Int,
+        maxY: Int,
+        mode: TimeBlockEditorMode,
+        onCancel: @escaping () -> Void,
+        onSave: @escaping (_ title: String, _ start: Int, _ end: Int) -> Void,
+        onDelete: (() -> Void)? = nil
+    ) {
         _workingTitle = State(initialValue: title)
         _workingStart = State(initialValue: start)
         _workingEnd = State(initialValue: end)
         self.maxY = maxY
+        self.mode = mode
         self.onCancel = onCancel
         self.onSave = onSave
         self.onDelete = onDelete
@@ -197,21 +222,22 @@ private struct EditTimeBlockModal: View {
                         }
                     }
                 }
-                Section {
-                    Button(role: .destructive) {
-                        onDelete()
-                    } label: {
-                        Label("Delete", systemImage: "trash")
+
+                if let onDelete {
+                    Section {
+                        Button(role: .destructive) { onDelete() } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 }
             }
-            .navigationTitle("Edit Time Block")
+            .navigationTitle(mode == .add ? "Add Time Block" : "Edit Time Block")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onCancel() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button(mode == .add ? "Add" : "Save") {
                         let clampedStart = max(0, min(workingStart, workingEnd - 1))
                         let clampedEnd = max(clampedStart + 1, min(workingEnd, maxY))
                         onSave(workingTitle.trimmingCharacters(in: .whitespacesAndNewlines), clampedStart, clampedEnd)
@@ -222,4 +248,3 @@ private struct EditTimeBlockModal: View {
         }
     }
 }
-
