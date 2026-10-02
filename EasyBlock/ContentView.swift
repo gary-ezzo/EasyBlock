@@ -6,6 +6,8 @@ struct ContentView: View {
     @State private var blocks: [(title: String, range: ClosedRange<Int>)] = []
     @State private var contentHeight: CGFloat = 0
     @State private var selectedBlock: (title: String, range: ClosedRange<Int>)? = nil
+    @State private var draggingIndex: Int? = nil
+    @State private var dragStartOffset: Int = 0
     private var maxY: Int { Int(max(0, contentHeight.rounded(.down))) }
     
     private struct IdentifiedBlock: Identifiable {
@@ -62,14 +64,60 @@ struct ContentView: View {
                 )
                 .overlay(alignment: .topLeading) {
                     ZStack(alignment: .topLeading) {
-                        ForEach(Array(blocks.enumerated()), id: \.offset) { _, item in
-                            let range = item.range
+                        ForEach(Array(blocks.enumerated()), id: \.offset) { index, item in
+                            let baseStart = item.range.lowerBound
+                            let baseEndExclusive = item.range.upperBound
+                            let isDragging = draggingIndex == index
+                            let visualStart: Int = isDragging ? max(0, min(maxY - 1, baseStart + dragStartOffset)) : baseStart
+                            let visualEndExclusive: Int = isDragging ? max(visualStart + 1, min(maxY, baseEndExclusive + dragStartOffset)) : baseEndExclusive
+                            let yStart = CGFloat(visualStart)
+                            let yEndExclusive = CGFloat(visualEndExclusive)
                             let title = item.title
-                            let yStart = CGFloat(range.lowerBound)
-                            let yEndExclusive = CGFloat(range.upperBound)
+                            let range = item.range
                             TimeBlock(title: title, yStart: yStart, yEnd: yEndExclusive, width: width) {
                                 selectedBlock = (title: title, range: range)
                             }
+                            .opacity(draggingIndex == index ? 0.9 : 1.0)
+                            .gesture(
+                                LongPressGesture(minimumDuration: 0.25)
+                                    .sequenced(before: DragGesture(minimumDistance: 0))
+                                    .onChanged { value in
+                                        switch value {
+                                        case .first(true):
+                                            // long press recognized, set initial drag state
+                                            if draggingIndex == nil {
+                                                draggingIndex = index
+                                                dragStartOffset = 0
+                                            }
+                                        case .second(true, let drag?):
+                                            // update offset based on drag translation in points -> integer rows
+                                            let dy = Int(drag.translation.height.rounded(.toNearestOrAwayFromZero))
+                                            dragStartOffset = dy
+                                        default:
+                                            break
+                                        }
+                                    }
+                                    .onEnded { value in
+                                        defer { draggingIndex = nil; dragStartOffset = 0 }
+                                        guard draggingIndex == index else { return }
+                                        var start = baseStart + dragStartOffset
+                                        var endExclusive = baseEndExclusive + dragStartOffset
+                                        // Clamp to bounds
+                                        if start < 0 {
+                                            endExclusive -= start // shift down to keep size
+                                            start = 0
+                                        }
+                                        if endExclusive > maxY {
+                                            let overflow = endExclusive - maxY
+                                            start -= overflow
+                                            endExclusive = maxY
+                                        }
+                                        start = max(0, min(start, maxY - 1))
+                                        endExclusive = max(start + 1, min(endExclusive, maxY))
+                                        // Commit the move
+                                        blocks[index].range = start...(endExclusive - 1)
+                                    }
+                            )
                         }
                     }
                 }
