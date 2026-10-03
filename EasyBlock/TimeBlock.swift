@@ -10,6 +10,9 @@ struct TimeBlock: View {
     let yEnd: CGFloat
     let width: CGFloat
     var onTap: (() -> Void)? = nil
+    // Optional edge drag callbacks. Delta is in points (positive means dragging downward)
+    var onDragTop: ((CGFloat, Bool) -> Void)? = nil
+    var onDragBottom: ((CGFloat, Bool) -> Void)? = nil
 
     private var rectY: CGFloat {
         min(yStart, yEnd)
@@ -21,11 +24,13 @@ struct TimeBlock: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
+            // Main block background
             Rectangle()
                 .fill(Color.accentColor.opacity(0.25))
                 .overlay(
                     Rectangle().stroke(Color.accentColor, lineWidth: 1)
                 )
+
             // Title label inside the block
             Text(title)
                 .font(.caption)
@@ -34,6 +39,41 @@ struct TimeBlock: View {
                 .padding(6)
                 .lineLimit(1)
                 .truncationMode(.tail)
+
+            // Top grab handle (hit area)
+            Rectangle()
+                .fill(Color.clear)
+                .frame(height: 12)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            onDragTop?(value.translation.height, false)
+                        }
+                        .onEnded { value in
+                            onDragTop?(value.translation.height, true)
+                        }
+                )
+
+            // Bottom grab handle (positioned at bottom)
+            VStack { Spacer() }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .overlay(
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(height: 12)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    onDragBottom?(value.translation.height, false)
+                                }
+                                .onEnded { value in
+                                    onDragBottom?(value.translation.height, true)
+                                }
+                        )
+                    , alignment: .bottom
+                )
         }
         .frame(width: width, height: rectHeight)
         .offset(x: 0, y: rectY)

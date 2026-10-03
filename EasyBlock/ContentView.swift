@@ -8,6 +8,12 @@ struct ContentView: View {
     @State private var selectedBlock: (title: String, range: ClosedRange<Int>)? = nil
     @State private var draggingIndex: Int? = nil
     @State private var dragStartOffset: Int = 0
+
+    // Edge-resize state
+    @State private var resizingIndex: Int? = nil
+    @State private var resizingTop: Bool = false
+    @State private var resizeAccumulated: CGFloat = 0
+
     private var maxY: Int { Int(max(0, contentHeight.rounded(.down))) }
     
     private struct IdentifiedBlock: Identifiable {
@@ -33,6 +39,24 @@ struct ContentView: View {
                     break
                 }
             }
+    }
+    
+    private func commitResize(for index: Int, deltaPoints: CGFloat) {
+        guard index >= 0 && index < blocks.count else { return }
+        let baseStart = blocks[index].range.lowerBound
+        let baseEndExclusive = blocks[index].range.upperBound + 1
+        let delta = Int(deltaPoints.rounded(.toNearestOrAwayFromZero))
+        var newStart = baseStart
+        var newEndExclusive = baseEndExclusive
+        if resizingTop {
+            newStart = max(0, min(baseStart + delta, newEndExclusive - 1))
+        } else {
+            newEndExclusive = max(baseStart + 1, min(baseEndExclusive + delta, maxY))
+        }
+        // Clamp both to bounds and min size of 1
+        newStart = max(0, min(newStart, maxY - 1))
+        newEndExclusive = max(newStart + 1, min(newEndExclusive, maxY))
+        blocks[index].range = newStart...(newEndExclusive - 1)
     }
 
     var body: some View {
@@ -74,23 +98,63 @@ struct ContentView: View {
                             let yEndExclusive = CGFloat(visualEndExclusive)
                             let title = item.title
                             let range = item.range
-                            TimeBlock(title: title, yStart: yStart, yEnd: yEndExclusive, width: width) {
-                                selectedBlock = (title: title, range: range)
-                            }
+
+                            TimeBlock(
+                                title: title,
+                                yStart: yStart,
+                                yEnd: yEndExclusive,
+                                width: width,
+                                onTap: { selectedBlock = (title: title, range: range) },
+                                onDragTop: { dy, ended in
+                                    if resizingIndex == nil { resizingIndex = index; resizingTop = true; resizeAccumulated = 0 }
+                                    guard resizingIndex == index, resizingTop else { return }
+                                    resizeAccumulated = dy
+                                    if ended {
+                                        commitResize(for: index, deltaPoints: resizeAccumulated)
+                                        resizingIndex = nil
+                                        resizeAccumulated = 0
+                                    } else {
+                                        // Live preview while resizing
+                                        let baseStart = item.range.lowerBound
+                                        let baseEndExclusive = item.range.upperBound + 1
+                                        let delta = Int(dy.rounded(.toNearestOrAwayFromZero))
+                                        let previewStart = max(0, min(baseStart + delta, baseEndExclusive - 1, maxY - 1))
+                                        let previewEndExclusive = max(previewStart + 1, min(baseEndExclusive, maxY))
+                                        blocks[index].range = previewStart...(previewEndExclusive - 1)
+                                    }
+                                },
+                                onDragBottom: { dy, ended in
+                                    if resizingIndex == nil { resizingIndex = index; resizingTop = false; resizeAccumulated = 0 }
+                                    guard resizingIndex == index, !resizingTop else { return }
+                                    resizeAccumulated = dy
+                                    if ended {
+                                        commitResize(for: index, deltaPoints: resizeAccumulated)
+                                        resizingIndex = nil
+                                        resizeAccumulated = 0
+                                    } else {
+                                        let baseStart = item.range.lowerBound
+                                        let baseEndExclusive = item.range.upperBound + 1
+                                        let delta = Int(dy.rounded(.toNearestOrAwayFromZero))
+                                        let previewEndExclusive = max(baseStart + 1, min(baseEndExclusive + delta, maxY))
+                                        let previewStart = max(0, min(baseStart, previewEndExclusive - 1, maxY - 1))
+                                        blocks[index].range = previewStart...(previewEndExclusive - 1)
+                                    }
+                                }
+                            )
                             .opacity(draggingIndex == index ? 0.9 : 1.0)
+                            // Existing long-press move gesture disabled while resizing
                             .gesture(
                                 LongPressGesture(minimumDuration: 0.25)
                                     .sequenced(before: DragGesture(minimumDistance: 0))
                                     .onChanged { value in
+                                        guard resizingIndex == nil else { return }
                                         switch value {
                                         case .first(true):
-                                            // long press recognized, set initial drag state
                                             if draggingIndex == nil {
                                                 draggingIndex = index
                                                 dragStartOffset = 0
                                             }
                                         case .second(true, let drag?):
-                                            // update offset based on drag translation in points -> integer rows
                                             let dy = Int(drag.translation.height.rounded(.toNearestOrAwayFromZero))
                                             dragStartOffset = dy
                                         default:
@@ -98,13 +162,13 @@ struct ContentView: View {
                                         }
                                     }
                                     .onEnded { value in
+                                        guard resizingIndex == nil else { return }
                                         defer { draggingIndex = nil; dragStartOffset = 0 }
                                         guard draggingIndex == index else { return }
                                         var start = baseStart + dragStartOffset
                                         var endExclusive = baseEndExclusive + dragStartOffset
-                                        // Clamp to bounds
                                         if start < 0 {
-                                            endExclusive -= start // shift down to keep size
+                                            endExclusive -= start
                                             start = 0
                                         }
                                         if endExclusive > maxY {
@@ -114,7 +178,6 @@ struct ContentView: View {
                                         }
                                         start = max(0, min(start, maxY - 1))
                                         endExclusive = max(start + 1, min(endExclusive, maxY))
-                                        // Commit the move
                                         blocks[index].range = start...(endExclusive - 1)
                                     }
                             )
